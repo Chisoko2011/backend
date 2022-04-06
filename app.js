@@ -146,12 +146,10 @@ app.post('/getChatText', function (req, res) {
 
 
 
-app.post('/getListOfUsers', function (req, res) {
+app.get('/ordersList', function (req, res) {
  
     // connect to db
-    var mysql = require('mysql');
-
-  
+    var mysql = require('mysql');  
     // set up a connection  
       var con = mysql.createConnection({
       host: "localhost",
@@ -165,37 +163,15 @@ app.post('/getListOfUsers', function (req, res) {
      
  con.connect(function(err) {
   if (err) throw err;
-  con.query("SELECT * FROM login;", function (err, result, fields) {
-    if (err) throw err;
+  con.query("SELECT * FROM orders_list;", function (err, result, fields) {
+    if (err) throw err;    
     
-    
-    if(result.length > 0){
-        
-        
-        var buffer = ''; // holds all the HTML to send back.
-        
-        
-        for(var i=0; i < result.length; i++){
-            var oneRecord = result[i]; // put one record into a local variable.
-            
-            console.log(oneRecord);
-            
-            var oneUser = oneRecord.username;
-            buffer += "<li>" + oneUser + '</li> <button onclick="startChat(\''+oneUser+'\')"> Start chat! </button>';
-        }
-        
-        // send back the list of users
-        
-        res.send(buffer);
-        
+    if(result.length > 0){   
+        res.send(result);
     } else {
-        
         res.send("something went wrong");
-        
     }
- 
-      });
-      
+      }); 
         });
    
 });

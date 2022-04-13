@@ -203,12 +203,16 @@ app.get('/login', function (req, res) {
   
  con.connect(function(err) {
   if (err) throw err;
-  con.query("SELECT * FROM logintable WHERE username = '"+un+"' AND userpassword = '"+pw+"';", function (err, result, fields) {
+  con.query("SELECT *  FROM users WHERE username = '"+un+"' AND password = '"+pw+"';", function (err, result, fields) {
     if (err) throw err;
     
     
     if(result.length > 0){
-        if (un === 'radiographer') {
+
+      con.query("UPDATE users SET logged_in = 1 WHERE username = '" + un + "';", function(err, result, fields) {
+        if (err) throw err;
+      });
+        if (result[0].role_id === 1) {
             res.json({ login: true, role: 'radiographer' });
         } else {
             res.json({ login: true, role: 'hca' });

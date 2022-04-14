@@ -203,16 +203,16 @@ app.get('/login', function (req, res) {
   
  con.connect(function(err) {
   if (err) throw err;
-  con.query("SELECT *  FROM users WHERE username = '"+un+"' AND password = '"+pw+"';", function (err, result, fields) {
+  con.query("SELECT *  FROM users WHERE email = '"+un+"' AND password = '"+pw+"';", function (err, result, fields) {
     if (err) throw err;
     
     
     if(result.length > 0){
 
-      con.query("UPDATE users SET logged_in = 1 WHERE username = '" + un + "';", function(err, result, fields) {
+      con.query("UPDATE users SET logged_in = 1 WHERE email = '" + un + "';", function(err, result, fields) {
         if (err) throw err;
       });
-        if (result[0].role_id === 1) {
+        if (result[0].role_id === '1') {
             res.json({ login: true, role: 'radiographer' });
         } else {
             res.json({ login: true, role: 'hca' });
@@ -225,6 +225,83 @@ app.get('/login', function (req, res) {
 });
  
 })
+
+
+
+app.get('/logout', function (req, res) {
+ 
+// catch the variables 
+var un = req.query.email;
+
+
+// put the data in the database
+// pulling in mysql
+var mysql = require('mysql');
+
+
+// set up a connection  
+var con = mysql.createConnection({
+host: "localhost",
+user: "root",
+database: "test",
+password: "Kawambwa1*"
+});
+
+con.connect(function(err) {
+if (err) throw err;
+
+    con.query("UPDATE users SET logged_in = 0 WHERE email = '" + un + "';", function(err, result, fields) {
+      if (err) throw err;
+    });
+    res.json({ logout: true});
+});
+
+})
+
+
+
+app.get('/register', function (req, res) {
+ 
+// catch the variables 
+var firstname = req.query.firstName;
+var lastname = req.query.lastName;
+var email = req.query.email;
+var contact = req.query.contact_number;
+var role = req.query.role;
+var password = req.query.password;
+
+
+// put the data in the database
+// pulling in mysql
+var mysql = require('mysql');
+
+
+// set up a connection  
+var con = mysql.createConnection({
+host: "localhost",
+user: "root",
+database: "test",
+password: "Kawambwa1*"
+});
+
+con.connect(function(err) {
+if (err) throw err;
+
+
+    con.query("insert into users (role_id, firstname, lastname, contactnumber, email, password) values ('" + 
+    role + "','" + firstname + "','" + lastname + "','" + contact + "','" + email + "','" + password + "');", function(err, result, fields) {
+      if (err) throw err;
+    });
+    res.json({ register: true });
+ 
+});
+
+})
+
+
+
+
+
 
 // catch 404 and forward to error handler
 app.use(function(req, res, next) {

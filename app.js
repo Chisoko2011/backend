@@ -148,32 +148,32 @@ app.post('/getChatText', function (req, res) {
 
 app.get('/ordersList', function (req, res) {
  
-    // connect to db
-    var mysql = require('mysql');  
-    // set up a connection  
-      var con = mysql.createConnection({
-      host: "localhost",
-      user: "root",
-      database: "test",
-      password: "Kawambwa1*"
-      });
-    
-    // loop over the users
-    // generate HTML for a list
-     
- con.connect(function(err) {
-  if (err) throw err;
-  con.query("SELECT * FROM orders_list;", function (err, result, fields) {
-    if (err) throw err;    
-    
-    if(result.length > 0){   
-        res.send(result);
-    } else {
-        res.send("something went wrong");
-    }
-      }); 
-        });
+  // connect to db
+  var mysql = require('mysql');  
+  // set up a connection  
+    var con = mysql.createConnection({
+    host: "localhost",
+    user: "root",
+    database: "test",
+    password: "Kawambwa1*"
+    });
+  
+  // loop over the users
+  // generate HTML for a list
    
+con.connect(function(err) {
+if (err) throw err;
+con.query("SELECT * FROM orders_list;", function (err, result, fields) {
+  if (err) throw err;    
+  
+  if(result.length > 0){   
+      res.send(result);
+  } else {
+      res.send("something went wrong");
+  }
+    }); 
+      });
+ 
 });
 
 
@@ -300,7 +300,70 @@ if (err) throw err;
 
 
 
+app.get('/hca_loggedin', function (req, res) {
+ 
+ 
+  // connect to db
+  var mysql = require('mysql');  
+  // set up a connection  
+    var con = mysql.createConnection({
+    host: "localhost",
+    user: "root",
+    database: "test",
+    password: "Kawambwa1*"
+    });
+  
+  // loop over the users
+  // generate HTML for a list
+   
+con.connect(function(err) {
+if (err) throw err;
+con.query("SELECT *  FROM users WHERE role_id = '2' AND logged_in = 1;", function (err, result, fields) {
+  if (err) throw err;    
+  
+  if(result.length > 0){   
+      res.send(result);
+  } else {
+      res.send("something went wrong");
+  }
+    }); 
+      });
+ 
+});
 
+
+app.get('/hca-assign', function (req, res) {
+ 
+  // catch the variables 
+  var hca_id = req.query.hca_id;
+  var mrn = req.query.mrn;
+  
+  
+  // put the data in the database
+  // pulling in mysql
+  var mysql = require('mysql');
+  
+  
+  // set up a connection  
+  var con = mysql.createConnection({
+  host: "localhost",
+  user: "root",
+  database: "test",
+  password: "Kawambwa1*"
+  });
+  
+  con.connect(function(err) {
+  if (err) throw err;
+  
+      con.query(`UPDATE orders_list SET hca_assigned = ${hca_id} WHERE patient_mrn = '${mrn}';`,   function(err, result, fields) {
+        if (err) throw err;
+        console.log(result)
+      res.send({ udated_list: true});
+      });
+  });
+  
+  })
+  
 
 
 // catch 404 and forward to error handler

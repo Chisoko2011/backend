@@ -163,7 +163,12 @@ app.get('/ordersList', function (req, res) {
    
 con.connect(function(err) {
 if (err) throw err;
-con.query("SELECT * FROM orders_list;", function (err, result, fields) {
+const query = `SELECT o.patient_mrn, o.firstname, o.lastname, w.name AS ward_location, o.ordered_at, o.hca_assigned, e.name AS exam, a.name AS order_status 
+FROM orders_list o 
+JOIN wards w ON o.ward_location_id = w.id
+JOIN exams e ON o.exam_id = e.id
+JOIN order_status a ON o.order_status_id = a.id;`
+con.query(query, function (err, result, fields) {
   if (err) throw err;    
   
   if(result.length > 0){   
@@ -366,14 +371,51 @@ app.get('/hca-assign', function (req, res) {
   
 
 
+
+
+app.get('/add_order', function (req, res) {
+ 
+  // catch the variables 
+  var mrn = req.query.mrn;
+  var firstname = req.query.firstName;
+  var lastname = req.query.lastName;
+  var ward = req.query.ward;
+  var exam = req.query.exam;
+  
+  
+  // put the data in the database
+  // pulling in mysql
+  var mysql = require('mysql');
+  
+  
+  // set up a connection  
+  var con = mysql.createConnection({
+  host: "localhost",
+  user: "root",
+  database: "test",
+  password: "Kawambwa1*"
+  });
+  
+  con.connect(function(err) {
+  if (err) throw err;
+  
+  
+      con.query("insert into orders_list (patient_mrn, firstname, lastname, ward_location_id , exam_id, order_status_id) values ('" + 
+      mrn + "','" + firstname + "','" + lastname + "','" + ward + "','" + exam + "',1);", function(err, result, fields) {
+        if (err) throw err;
+      });
+      res.json({ register: true });
+   
+  });
+  
+  })
+  
+
+
 // catch 404 and forward to error handler
 app.use(function(req, res, next) {
   next(createError(404));
 });
-
-
-
-
 
 // error handler
 app.use(function(err, req, res, next) {

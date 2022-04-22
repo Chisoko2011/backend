@@ -163,11 +163,51 @@ app.get('/ordersList', function (req, res) {
    
 con.connect(function(err) {
 if (err) throw err;
-const query = `SELECT o.patient_mrn, o.firstname, o.lastname, w.name AS ward_location, o.ordered_at, o.hca_assigned, e.name AS exam, a.name AS order_status 
+const query = `SELECT o.patient_mrn, o.firstname, o.lastname, w.name AS ward_location, o.ordered_at, o.hca_assigned, e.name AS exam, a.name AS order_status, r.text AS reason, o.started_at, o.arrived_at 
 FROM orders_list o 
 JOIN wards w ON o.ward_location_id = w.id
 JOIN exams e ON o.exam_id = e.id
-JOIN order_status a ON o.order_status_id = a.id;`
+JOIN order_status a ON o.order_status_id = a.id
+JOIN reasons_for_delay r ON o.reason_id = r.id`
+con.query(query, function (err, result, fields) {
+  if (err) throw err;    
+  
+  if(result.length > 0){   
+      res.send(result);
+  } else {
+      res.send("something went wrong");
+  }
+    }); 
+      });
+ 
+});
+
+
+app.get('/ordersListHca', function (req, res) {
+ 
+  const hca_id = req.query.hca_id;
+  // connect to db
+  var mysql = require('mysql');  
+  // set up a connection  
+    var con = mysql.createConnection({
+    host: "localhost",
+    user: "root",
+    database: "test",
+    password: "Kawambwa1*"
+    });
+  
+  // loop over the users
+  // generate HTML for a list
+   
+con.connect(function(err) {
+if (err) throw err;
+const query = `SELECT o.patient_mrn, o.firstname, o.lastname, w.name AS ward_location, o.ordered_at, o.hca_assigned, e.name AS exam, a.name AS order_status, r.text AS reason, o.started_at, o.arrived_at 
+FROM orders_list o
+JOIN wards w ON o.ward_location_id = w.id
+JOIN exams e ON o.exam_id = e.id
+JOIN order_status a ON o.order_status_id = a.id
+JOIN reasons_for_delay r ON o.reason_id = r.id
+WHERE o.hca_assigned = ${hca_id}`
 con.query(query, function (err, result, fields) {
   if (err) throw err;    
   
@@ -183,21 +223,16 @@ con.query(query, function (err, result, fields) {
 
 
 
-
-
 app.get('/login', function (req, res) {
  
-    console.log('un received is ', req.query )
   // catch the variables 
   var un = req.query.userfirstname;
   var pw = req.query.userpassword;
-
 
   // put the data in the database
   // pulling in mysql
   var mysql = require('mysql');
 
-  
  // set up a connection  
   var con = mysql.createConnection({
   host: "localhost",
@@ -210,17 +245,20 @@ app.get('/login', function (req, res) {
   if (err) throw err;
   con.query("SELECT *  FROM users WHERE email = '"+un+"' AND password = '"+pw+"';", function (err, result, fields) {
     if (err) throw err;
-    
-    
     if(result.length > 0){
+      const user = result[0];
 
       con.query("UPDATE users SET logged_in = 1 WHERE email = '" + un + "';", function(err, result, fields) {
         if (err) throw err;
       });
-        if (result[0].role_id === '1') {
-            res.json({ login: true, role: 'radiographer' });
+        if (user.role_id === '1') {
+            res.json({ login: true, role: 'radiographer', user_id: user.id });
         } else {
-            res.json({ login: true, role: 'hca' });
+          const hca_status_insert_query =  "INSERT INTO hca_status (user_id, name, status) values ('" + user.id + "','" + user.firstname + "',1);";
+          con.query(hca_status_insert_query, function(err, result, fields) {
+            if (err) throw err;
+            res.json({ login: true, role: 'hca', user_id: user.id });
+          });
         }
     } else {
         res.json({ login: false })
@@ -236,7 +274,7 @@ app.get('/login', function (req, res) {
 app.get('/logout', function (req, res) {
  
 // catch the variables 
-var un = req.query.email;
+var id = req.query.id;
 
 
 // put the data in the database
@@ -255,7 +293,11 @@ password: "Kawambwa1*"
 con.connect(function(err) {
 if (err) throw err;
 
-    con.query("UPDATE users SET logged_in = 0 WHERE email = '" + un + "';", function(err, result, fields) {
+    con.query("UPDATE users SET logged_in = 0 WHERE id = '" + id + "';", function(err, result, fields) {
+      if (err) throw err;
+    });
+    const hca_status_delete_query =  "DELETE FROM hca_status WHERE user_id='" + id + "';";
+    con.query(hca_status_delete_query, function(err, result, fields) {
       if (err) throw err;
     });
     res.json({ logout: true});

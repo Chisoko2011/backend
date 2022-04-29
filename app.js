@@ -43,109 +43,6 @@ app.get('/test', function (req, res) {
   res.json({ test: true });
 });
 
-app.post('/putinDB', function (req, res) {
-
-  // catch the three variables 
-  var text = req.body.text;
-  var username = req.body.username;
-  var me = req.body.me;
-
-
-  // insert into db
-  var mysql = require('mysql');
-
-
-  // set up a connection  
-  var con = mysql.createConnection({
-    host: "localhost",
-    user: "root",
-    database: "test",
-    password: "Kawambwa1*"
-  });
-
-
-  con.connect(function (err) {
-
-
-    if (err) throw err;
-    console.log("Connected!");
-
-
-    var sql = "INSERT INTO chatlog (chattext, username, chattingwith) VALUES ('" + text + "','" + me + "','" + username + "'  )";
-
-    console.log(sql);
-
-    con.query(sql, function (err, result) {
-      if (err) throw err;
-      console.log("1 record inserted");
-    });
-  });
-
-
-
-
-  res.send("saved");
-});
-
-app.post('/getChatText', function (req, res) {
-
-  // connect to db
-  var mysql = require('mysql');
-
-  // get the username of the person we are talking to
-  var username = req.body.username;
-
-  // set up a connection  
-  var con = mysql.createConnection({
-    host: "localhost",
-    user: "root",
-    database: "test",
-    password: "Kawambwa1*"
-  });
-
-  // loop over the users
-  // generate HTML for a list
-  var sql = "SELECT * FROM chatlog where chattingWith = '" + username + "';";
-  console.log(sql);
-
-
-  con.connect(function (err) {
-    if (err) throw err;
-    con.query(sql, function (err, result, fields) {
-      if (err) throw err;
-
-
-      if (result.length > 0) {
-        var buffer = '';
-
-
-        for (var i = 0; i < result.length; i++) {
-          var oneRecord = result[i]; // put one record into a local variable.
-          var oneLine = oneRecord.chattext;
-
-          // adding the text onto the buffer variable.
-          buffer += oneLine + '\n';
-        }
-
-        // send back the list of users
-        res.send(buffer);
-
-
-
-      } else {
-
-        res.send("something went wrong");
-
-      }
-
-    });
-
-  });
-
-});
-
-
-
 app.get('/ordersList', function (req, res) {
 
   // connect to db
@@ -380,18 +277,10 @@ app.get('/hca_loggedin', function (req, res) {
 
 
 app.get('/hca-assign', function (req, res) {
-
-  // catch the variables 
   var hca_id = req.query.hca_id;
   var mrn = req.query.mrn;
 
-
-  // put the data in the database
-  // pulling in mysql
   var mysql = require('mysql');
-
-
-  // set up a connection  
   var con = mysql.createConnection({
     host: "localhost",
     user: "root",
@@ -402,7 +291,7 @@ app.get('/hca-assign', function (req, res) {
   con.connect(function (err) {
     if (err) throw err;
 
-    con.query(`UPDATE orders_list SET hca_assigned = ${hca_id} WHERE patient_mrn = '${mrn}';`, function (err, result, fields) {
+    con.query(`UPDATE orders_list SET hca_assigned = ${hca_id}, order_status_id = 2, started_at = '${new Date()}' WHERE patient_mrn = '${mrn}';`, function (err, result, fields) {
       con.query(`UPDATE hca_status SET STATUS = 0, patient_assigned = ${mrn} WHERE user_id = ${hca_id};`, function (err, result, fields) {
         if (err) throw err;
         res.send({ udated_list: true });
@@ -414,6 +303,28 @@ app.get('/hca-assign', function (req, res) {
 })
 
 
+app.get('/order_mark_arrived', function (req, res) {
+  var mrn = req.query.mrn;
+
+  var mysql = require('mysql');
+  var con = mysql.createConnection({
+    host: "localhost",
+    user: "root",
+    database: "test",
+    password: "Kawambwa1*"
+  });
+
+  con.connect(function (err) {
+    if (err) throw err;
+
+    con.query(`UPDATE orders_list SET order_status_id = 3, arrived_at = '${new Date()}' WHERE patient_mrn = '${mrn}';`, function (err, result, fields) {
+      if (err) throw err;
+        res.send({ udated_list: true });
+      if (err) throw err;
+    });
+  });
+
+})
 
 
 
@@ -444,8 +355,8 @@ app.get('/add_order', function (req, res) {
     if (err) throw err;
 
 
-    con.query("insert into orders_list (patient_mrn, firstname, lastname, ward_location_id , exam_id, order_status_id) values ('" +
-      mrn + "','" + firstname + "','" + lastname + "','" + ward + "','" + exam + "',1);", function (err, result, fields) {
+    con.query("insert into orders_list (patient_mrn, firstname, lastname, ward_location_id , exam_id, ordered_at, order_status_id) values ('" +
+      mrn + "','" + firstname + "','" + lastname + "','" + ward + "','" + exam + "','" + new Date() + "',1);", function (err, result, fields) {
         if (err) throw err;
       });
     res.json({ register: true });
@@ -482,7 +393,60 @@ app.get('/hca_available', function (req, res) {
 
 });
 
+app.get('/exams', function (req, res) {
+  // connect to db
+  var mysql = require('mysql');
+  // set up a connection  
+  var con = mysql.createConnection({
+    host: "localhost",
+    user: "root",
+    database: "test",
+    password: "Kawambwa1*"
+  });
 
+  con.connect(function (err) {
+    if (err) throw err;
+    const query = `SELECT * FROM exams;`;
+    con.query(query, function (err, result, fields) {
+      if (err) throw err;
+
+      if (result.length > 0) {
+        res.send(result);
+      } else {
+        res.send("something went wrong");
+      }
+    });
+  });
+
+});
+
+
+app.get('/wards', function (req, res) {
+  // connect to db
+  var mysql = require('mysql');
+  // set up a connection  
+  var con = mysql.createConnection({
+    host: "localhost",
+    user: "root",
+    database: "test",
+    password: "Kawambwa1*"
+  });
+
+  con.connect(function (err) {
+    if (err) throw err;
+    const query = `SELECT * FROM wards;`;
+    con.query(query, function (err, result, fields) {
+      if (err) throw err;
+
+      if (result.length > 0) {
+        res.send(result);
+      } else {
+        res.send("something went wrong");
+      }
+    });
+  });
+
+});
 
 // catch 404 and forward to error handler
 app.use(function (req, res, next) {
